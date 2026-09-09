@@ -58,6 +58,7 @@ import {
   statusLabel,
 } from '@/src/application/work-request-service';
 import { createBackup, downloadBlob, restoreBackup } from '@/src/infrastructure/backup/backup-service';
+import { generateMaterialRequisitionWorkbook } from '@/src/infrastructure/spreadsheets/material-requisition-exporter';
 import { generateOriginalPdf, sha256, signPdf } from '@/src/infrastructure/pdf/pdf-service';
 import {
   isNativeRuntime,
@@ -390,6 +391,33 @@ export function WorkRequestApp() {
     }
   };
 
+  const exportMaterials = async (record: WorkRequestRecord, formData: WorkRequestFormData) => {
+    clearMessages();
+    try {
+      setNotice('Generando requisición de materiales...');
+      const workbook = await generateMaterialRequisitionWorkbook(formData);
+      const fileName = `${record.folio}_requisicion_material.xlsx`;
+      if (isNativeRuntime()) await shareNativeBlob(workbook, fileName);
+      else downloadBlob(workbook, fileName);
+      setNotice('Requisición de materiales exportada.');
+    } catch (reason) {
+      setNotice('');
+      setError(reason instanceof Error ? reason.message : 'No fue posible exportar los materiales.');
+    }
+  };
+
+  const exportMaterialsFromForm = async () => {
+    if (!activeRecord) return;
+    try {
+      const saved = await saveWorkRequestDraft(activeRecord, form.getValues());
+      setActiveRecord(saved);
+      await refreshRecords();
+      await exportMaterials(saved, saved.formData);
+    } catch {
+      setError('No fue posible guardar la solicitud antes de exportar los materiales.');
+    }
+  };
+
   const exportBackup = async () => {
     clearMessages();
     try {
@@ -571,7 +599,7 @@ export function WorkRequestApp() {
               </CardContent>
             </Card>
 
-            <div className="sticky bottom-3 flex flex-col gap-2 rounded-2xl border bg-white/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:justify-end"><Button variant="outline" className="min-h-12" onClick={goHome}>Guardar y salir</Button><Button className="min-h-12 px-6" onClick={generateDocument}><FileText /> Generar documento</Button></div>
+            <div className="sticky bottom-3 flex flex-col gap-2 rounded-2xl border bg-white/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:justify-end"><Button variant="outline" className="min-h-12" onClick={exportMaterialsFromForm}><Download /> Exportar materiales</Button><Button variant="outline" className="min-h-12" onClick={goHome}>Guardar y salir</Button><Button className="min-h-12 px-6" onClick={generateDocument}><FileText /> Generar documento</Button></div>
           </section>
         )}
 
@@ -591,6 +619,7 @@ export function WorkRequestApp() {
             )}
 
             <div className="flex flex-col gap-3 rounded-2xl border bg-white p-4 sm:flex-row sm:justify-end">
+              <Button variant="outline" className="min-h-12" onClick={() => void exportMaterials(activeRecord, activeRecord.formData)}><Download /> Exportar materiales</Button>
               {activeRecord.status === 'PENDING_SIGNATURE' && <><Button variant="outline" className="min-h-12" onClick={editAgain}>Corregir formulario</Button><Button className="min-h-12 px-6" onClick={finalizeDocument}><ShieldCheck /> Confirmar firmas y finalizar</Button></>}
               {activeRecord.status === 'PRINT_READY' && <><Button variant="outline" className="min-h-12" onClick={savePdf}><Download /> Guardar PDF</Button><Button className="min-h-12 px-6" onClick={printDocument}><Printer /> Imprimir documento</Button></>}
             </div>
