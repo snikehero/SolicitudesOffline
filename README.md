@@ -77,6 +77,12 @@ npm run build
 
 El código está separado en `domain`, `application`, `infrastructure` y `features`. Los nombres de archivos, variables, tipos y comentarios están en inglés; los textos visibles se mantienen en español. El MVP usa React, TypeScript, React Hook Form, Zod, Dexie, pdf-lib, React-PDF/PDF.js, Signature Pad y JSZip.
 
+Documentación del proyecto:
+
+- [Planeación del MVP](docs/PLANEACION_MVP.md)
+- [Documento técnico general](docs/DOCUMENTO_TECNICO_PROYECTO.md)
+- [Machote de materiales requeridos](docs/templates/machote_materiales_requeridos.xlsx)
+
 ## Operación y respaldo
 
 No se necesita internet para instalar desde el servidor local, pero sí conexión Wi-Fi entre el teléfono y la computadora durante la instalación o actualización. Una PWA no puede seleccionar una impresora ni confirmar que el papel salió físicamente; Android conserva ese control. Borrar los datos de Chrome, quitar el certificado o desinstalar la aplicación puede afectar el acceso, por lo que los respaldos ZIP periódicos son indispensables.
