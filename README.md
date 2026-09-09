@@ -1,5 +1,7 @@
 # Solicitudes TDCON
 
+> Para compilar e instalar la versión nativa de Android, consulte [docs/ANDROID_APK.md](docs/ANDROID_APK.md) en la rama `android-apk`.
+
 PWA offline-first para capturar solicitudes de trabajo, generar el PDF original, obtener dos firmas manuscritas con dedo o stylus y producir la versión final lista para imprimir desde Android.
 
 ## Funciones del MVP

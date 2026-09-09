@@ -59,6 +59,11 @@ import {
 } from '@/src/application/work-request-service';
 import { createBackup, downloadBlob, restoreBackup } from '@/src/infrastructure/backup/backup-service';
 import { generateOriginalPdf, sha256, signPdf } from '@/src/infrastructure/pdf/pdf-service';
+import {
+  isNativeRuntime,
+  printNativePdf,
+  shareNativeBlob,
+} from '@/src/infrastructure/native/native-document-service';
 import { SignaturePad } from '@/src/features/signature/SignaturePad';
 
 const PdfViewer = dynamic(
@@ -336,27 +341,41 @@ export function WorkRequestApp() {
       setError('Solo se puede imprimir un documento firmado.');
       return;
     }
-    const url = URL.createObjectURL(activePdf);
-    const frame = document.createElement('iframe');
-    frame.style.position = 'fixed';
-    frame.style.width = '1px';
-    frame.style.height = '1px';
-    frame.style.opacity = '0';
-    frame.src = url;
-    frame.onload = () => window.setTimeout(() => frame.contentWindow?.print(), 300);
-    document.body.appendChild(frame);
-    window.setTimeout(() => {
-      frame.remove();
-      URL.revokeObjectURL(url);
-    }, 60_000);
-    await recordPrintRequested(activeRecord.id);
-    setNotice('Se abrió el diálogo de impresión de Android.');
+    try {
+      if (isNativeRuntime()) {
+        await printNativePdf(activePdf, activeRecord.folio);
+      } else {
+        const url = URL.createObjectURL(activePdf);
+        const frame = document.createElement('iframe');
+        frame.style.position = 'fixed';
+        frame.style.width = '1px';
+        frame.style.height = '1px';
+        frame.style.opacity = '0';
+        frame.src = url;
+        frame.onload = () => window.setTimeout(() => frame.contentWindow?.print(), 300);
+        document.body.appendChild(frame);
+        window.setTimeout(() => {
+          frame.remove();
+          URL.revokeObjectURL(url);
+        }, 60_000);
+      }
+      await recordPrintRequested(activeRecord.id);
+      setNotice('Se abrió el diálogo de impresión de Android.');
+    } catch {
+      setError('No fue posible abrir la impresión de Android.');
+    }
   };
 
-  const savePdf = () => {
+  const savePdf = async () => {
     if (!activeRecord || !activePdf) return;
     const suffix = activeRecord.status === 'PRINT_READY' ? '_firmado' : '_original';
-    downloadBlob(activePdf, `${activeRecord.folio}${suffix}.pdf`);
+    const fileName = `${activeRecord.folio}${suffix}.pdf`;
+    try {
+      if (isNativeRuntime()) await shareNativeBlob(activePdf, fileName);
+      else downloadBlob(activePdf, fileName);
+    } catch {
+      setError('No fue posible guardar o compartir el PDF.');
+    }
   };
 
   const exportBackup = async () => {
@@ -364,7 +383,9 @@ export function WorkRequestApp() {
     try {
       const backup = await createBackup();
       const stamp = new Date().toISOString().slice(0, 10);
-      downloadBlob(backup, `respaldo-tdcon-${stamp}.zip`);
+      const fileName = `respaldo-tdcon-${stamp}.zip`;
+      if (isNativeRuntime()) await shareNativeBlob(backup, fileName);
+      else downloadBlob(backup, fileName);
       setNotice('Respaldo generado. Conserva el archivo en un lugar seguro.');
     } catch {
       setError('No fue posible generar el respaldo.');

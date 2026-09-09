@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { Button } from '@/components/ui/button';
 
 export function PwaController() {
   const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
 
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) return;
     if (!('serviceWorker' in navigator)) return;
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
