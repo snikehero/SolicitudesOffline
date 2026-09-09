@@ -207,6 +207,15 @@ export function WorkRequestApp() {
     setError('');
   };
 
+  const clearSignatureForm = () => {
+    setRequesterSignature('');
+    setTdconSignature('');
+    setRequesterSignerName('');
+    setRequesterSignedDate('');
+    setTdconSignerName('');
+    setTdconSignerPosition('');
+  };
+
   const startNewRequest = async () => {
     clearMessages();
     try {
@@ -214,6 +223,7 @@ export function WorkRequestApp() {
       setActiveRecord(record);
       form.reset(record.formData);
       setActivePdf(null);
+      clearSignatureForm();
       setSaveState('saved');
       setScreen('form');
       await refreshRecords();
@@ -227,6 +237,7 @@ export function WorkRequestApp() {
     setActiveRecord(record);
     if (record.status === 'DRAFT') {
       form.reset(record.formData);
+      clearSignatureForm();
       setScreen('form');
       return;
     }
@@ -237,10 +248,9 @@ export function WorkRequestApp() {
       return;
     }
     setActivePdf(version.pdfBlob);
+    clearSignatureForm();
     setRequesterSignerName(record.formData.requesterName);
     setRequesterSignedDate(new Date().toISOString().slice(0, 10));
-    setRequesterSignature('');
-    setTdconSignature('');
     setScreen('review');
     await recordDocumentOpened(record.id);
   };
@@ -249,6 +259,7 @@ export function WorkRequestApp() {
     clearMessages();
     setActiveRecord(null);
     setActivePdf(null);
+    clearSignatureForm();
     setScreen('dashboard');
     await refreshRecords();
   };
@@ -270,6 +281,7 @@ export function WorkRequestApp() {
       const updated = await saveOriginalPdf(saved, pdfBlob, hash);
       setActiveRecord(updated);
       setActivePdf(pdfBlob);
+      clearSignatureForm();
       setRequesterSignerName(validation.data.requesterName);
       setRequesterSignedDate(new Date().toISOString().slice(0, 10));
       setScreen('review');

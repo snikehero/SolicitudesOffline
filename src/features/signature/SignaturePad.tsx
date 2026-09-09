@@ -22,6 +22,10 @@ export function SignaturePad({ label, value, onChange }: SignaturePadProps) {
   }, [onChange]);
 
   useEffect(() => {
+    if (!value) signatureRef.current?.clear();
+  }, [value]);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const signature = new SignaturePadLibrary(canvas, {
